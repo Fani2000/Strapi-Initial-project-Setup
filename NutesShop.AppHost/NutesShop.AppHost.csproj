@@ -1,0 +1,21 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>1d85f0d6-716c-4f63-98ab-37d02e1c59fe</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.1.0"/>
+        <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.1.0" />
+        <PackageReference Include="Aspire.Hosting.Redis" Version="13.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\NutesShop_Server\NutesShop_Server.csproj" />
+    </ItemGroup>
+</Project>
