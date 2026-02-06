@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_common_nutritions",
+  "info": {
+    "displayName": "nutrition"
+  },
+  "options": {},
+  "attributes": {
+    "calories": {
+      "type": "biginteger"
+    },
+    "protein_g": {
+      "type": "decimal"
+    },
+    "fat_g": {
+      "type": "decimal"
+    },
+    "carbs_g": {
+      "type": "decimal"
+    },
+    "fiber_g": {
+      "type": "decimal"
+    },
+    "sugar_g": {
+      "type": "decimal"
+    },
+    "sodium_mg": {
+      "type": "decimal"
+    }
+  },
+  "config": {}
+}

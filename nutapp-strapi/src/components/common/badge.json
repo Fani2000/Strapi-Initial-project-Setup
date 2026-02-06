@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_common_badges",
+  "info": {
+    "displayName": "badge"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string"
+    },
+    "color": {
+      "type": "enumeration",
+      "enum": [
+        "amber",
+        "green",
+        "red",
+        "slate",
+        "purple"
+      ]
+    }
+  },
+  "config": {}
+}

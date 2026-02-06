@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_common_prices",
+  "info": {
+    "displayName": "price"
+  },
+  "options": {},
+  "attributes": {
+    "amount": {
+      "type": "decimal"
+    },
+    "per": {
+      "type": "enumeration",
+      "enum": [
+        "one hundred gram - 100g",
+        "two hundred fifty gram - 250g",
+        "five hundred gram - 500g",
+        "one kilogram - 1kg",
+        "each"
+      ]
+    }
+  },
+  "config": {}
+}
