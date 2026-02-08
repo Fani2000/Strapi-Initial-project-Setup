@@ -61,6 +61,18 @@ main {
   overflow: hidden;
 }
 
+.hero.hero-image {
+  background-size: cover;
+  background-position: center;
+}
+
+.hero.hero-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(11, 13, 16, 0.8), rgba(11, 13, 16, 0.5));
+}
+
 .hero-glow {
   position: absolute;
   width: 260px;
@@ -75,6 +87,11 @@ main {
   margin: 10px 0 16px;
   font-size: clamp(32px, 5vw, 54px);
   max-width: 680px;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-sub {
@@ -117,6 +134,24 @@ main {
   border-radius: 16px;
   background: var(--card);
   margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .grid {
@@ -150,8 +185,9 @@ main {
 .card-image {
   height: 100%;
   width: 100%;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .card-image.placeholder {

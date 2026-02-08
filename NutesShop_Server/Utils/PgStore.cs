@@ -103,7 +103,7 @@ public sealed class PgStore
     {
         using var conn = await OpenAsync(ct);
         var row = await conn.QuerySingleOrDefaultAsync(new CommandDefinition("""
-            select * from get_home();
+        select * from get_home();
         """, cancellationToken: ct));
 
         if (row is null) return null;

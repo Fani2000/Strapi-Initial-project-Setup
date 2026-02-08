@@ -1,4 +1,5 @@
 using System.Text.Json;
+using NutesShop_Server.Shop;
 
 namespace NutsShop_Server.Shop;
 
@@ -60,17 +61,18 @@ public static class StrapiMapper
                     .ToArray();
             }
 
-            list.Add(new ProductDto(
-                Slug: slug!,
-                Name: name!,
-                Description: desc,
-                PriceCents: priceCents,
-                Per: per,
-                ImageUrl: imageUrl,
-                InStock: inStock,
-                Featured: featured,
-                Badges: badges
-            ));
+            list.Add(new ProductDto
+            {
+                Slug = slug!,
+                Name = name!,
+                Description = desc,
+                PriceCents = priceCents,
+                Per = per,
+                ImageUrl = imageUrl,
+                InStock = inStock,
+                Featured = featured,
+                Badges = badges
+            });
         }
 
         return list;
@@ -126,7 +128,7 @@ public static class StrapiMapper
     {
         if (resp?.Data is null) return Array.Empty<ProductDto>();
         return resp.Data
-            .Select(e => MapProduct(e.Attributes, strapiBaseUrl))
+            .Select(e => MapProductEntry(e, strapiBaseUrl))
             .Where(p => p is not null)
             .Select(p => p!)
             .ToArray();
@@ -136,15 +138,17 @@ public static class StrapiMapper
         StrapiResponse<StrapiEntry<HomePageAttributes>> resp,
         string strapiBaseUrl)
     {
+        var ext = resp?.Data?.ExtensionData;
+        if (ext is not null && ext.Count > 0)
+            return MapHomeFromFlat(ext, strapiBaseUrl);
+
         var a = resp?.Data?.Attributes;
         if (a is null)
-        {
             return new HomePageDto("", "", "", "", Array.Empty<ProductDto>());
-        }
 
         var heroImageUrl = ResolveUrl(a.HeroImage?.Data?.Attributes?.Url, strapiBaseUrl);
         var featured = a.FeaturedProducts?.Data?
-            .Select(p => MapProduct(p.Attributes, strapiBaseUrl))
+            .Select(p => MapProductEntry(p, strapiBaseUrl))
             .Where(p => p is not null)
             .Select(p => p!)
             .ToArray() ?? Array.Empty<ProductDto>();
@@ -156,6 +160,72 @@ public static class StrapiMapper
             HeroImageUrl: heroImageUrl ?? "",
             FeaturedProducts: featured
         );
+    }
+
+    private static HomePageDto MapHomeFromFlat(
+        Dictionary<string, System.Text.Json.JsonElement> data,
+        string strapiBaseUrl)
+    {
+        var heroTitle = GetString(data, "heroTitle") ?? "";
+        var heroSubtitle = GetString(data, "heroSubtitle") ?? "";
+        var promoText = GetString(data, "promoText") ?? "";
+
+        var heroImageUrl = "";
+        if (data.TryGetValue("heroImage", out var heroEl))
+        {
+            if (heroEl.ValueKind == JsonValueKind.Object)
+            {
+                // v4 style: heroImage.data.attributes.url
+                if (heroEl.TryGetProperty("data", out var heroData) &&
+                    heroData.ValueKind != JsonValueKind.Null)
+                {
+                    var url = heroData.GetProperty("attributes").GetProperty("url").GetString();
+                    heroImageUrl = ResolveUrl(url, strapiBaseUrl) ?? "";
+                }
+                // v5 flat: heroImage.url
+                else if (heroEl.TryGetProperty("url", out var urlEl))
+                {
+                    heroImageUrl = ResolveUrl(urlEl.GetString(), strapiBaseUrl) ?? "";
+                }
+            }
+            else if (heroEl.ValueKind == JsonValueKind.Array && heroEl.GetArrayLength() > 0)
+            {
+                var first = heroEl[0];
+                if (first.TryGetProperty("url", out var urlEl))
+                    heroImageUrl = ResolveUrl(urlEl.GetString(), strapiBaseUrl) ?? "";
+            }
+        }
+
+        var featured = Array.Empty<ProductDto>();
+        if (data.TryGetValue("featuredProducts", out var fp) && fp.ValueKind == JsonValueKind.Object)
+        {
+            if (fp.TryGetProperty("data", out var fpData) && fpData.ValueKind == JsonValueKind.Array)
+            {
+                var payload = new JsonObjectBuilder().WithData(fpData).Build();
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<StrapiResponse<List<StrapiEntry<ProductAttributes>>>>(payload);
+                if (parsed is not null)
+                    featured = MapProducts(parsed, strapiBaseUrl).ToArray();
+            }
+        }
+
+        return new HomePageDto(
+            HeroTitle: heroTitle,
+            HeroSubtitle: heroSubtitle,
+            PromoText: promoText,
+            HeroImageUrl: heroImageUrl,
+            FeaturedProducts: featured
+        );
+    }
+
+    private static ProductDto? MapProductEntry(StrapiEntry<ProductAttributes> entry, string strapiBaseUrl)
+    {
+        if (entry.ExtensionData is not null && entry.ExtensionData.Count > 0)
+            return MapProductFromFlat(entry.ExtensionData, strapiBaseUrl);
+
+        if (entry.Attributes is not null)
+            return MapProduct(entry.Attributes, strapiBaseUrl);
+
+        return null;
     }
 
     private static ProductDto? MapProduct(ProductAttributes? a, string strapiBaseUrl)
@@ -178,17 +248,103 @@ public static class StrapiMapper
             .Select(l => l!)
             .ToArray() ?? Array.Empty<string>();
 
-        return new ProductDto(
-            Slug: a.Slug!,
-            Name: a.Name!,
-            Description: a.Description ?? "",
-            PriceCents: priceCents,
-            Per: per,
-            ImageUrl: imageUrl,
-            InStock: a.InStock ?? false,
-            Featured: a.Featured ?? false,
-            Badges: badges
-        );
+        return new ProductDto
+        {
+            Slug = a.Slug!,
+            Name = a.Name!,
+            Description = a.Description ?? "",
+            PriceCents = priceCents,
+            Per = per,
+            ImageUrl = imageUrl,
+            InStock = a.InStock ?? false,
+            Featured = a.Featured ?? false,
+            Badges = badges
+        };
+    }
+
+    private static ProductDto? MapProductFromFlat(
+        Dictionary<string, System.Text.Json.JsonElement> data,
+        string strapiBaseUrl)
+    {
+        var slug = GetString(data, "slug");
+        var name = GetString(data, "name");
+        if (string.IsNullOrWhiteSpace(slug) || string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var description = GetString(data, "description") ?? "";
+        var inStock = GetBool(data, "inStock") ?? false;
+        var featured = GetBool(data, "featured") ?? false;
+
+        var priceCents = 0;
+        var per = "each";
+        if (data.TryGetValue("price", out var priceEl) && priceEl.ValueKind == JsonValueKind.Object)
+        {
+            if (priceEl.TryGetProperty("amount", out var amountEl) && amountEl.ValueKind == JsonValueKind.Number)
+                priceCents = (int)Math.Round(amountEl.GetDecimal() * 100m);
+            if (priceEl.TryGetProperty("per", out var perEl))
+                per = perEl.GetString() ?? per;
+        }
+
+        var imageUrl = "";
+        if (data.TryGetValue("images", out var imagesEl))
+        {
+            if (imagesEl.ValueKind == JsonValueKind.Object)
+            {
+                // v4 style: images.data[].attributes.url
+                if (imagesEl.TryGetProperty("data", out var imgData) &&
+                    imgData.ValueKind == JsonValueKind.Array &&
+                    imgData.GetArrayLength() > 0)
+                {
+                    var url = imgData[0].GetProperty("attributes").GetProperty("url").GetString();
+                    imageUrl = ResolveUrl(url, strapiBaseUrl) ?? "";
+                }
+            }
+            else if (imagesEl.ValueKind == JsonValueKind.Array && imagesEl.GetArrayLength() > 0)
+            {
+                // v5 flat: images[] with url at root
+                var first = imagesEl[0];
+                if (first.TryGetProperty("url", out var urlEl))
+                    imageUrl = ResolveUrl(urlEl.GetString(), strapiBaseUrl) ?? "";
+            }
+        }
+
+        var badges = Array.Empty<string>();
+        var badgeKey = data.ContainsKey("badges") ? "badges" : "bages";
+        if (data.TryGetValue(badgeKey, out var badgesEl) && badgesEl.ValueKind == JsonValueKind.Array)
+        {
+            badges = badgesEl.EnumerateArray()
+                .Select(x => x.TryGetProperty("label", out var l) ? l.GetString() : null)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToArray();
+        }
+
+        return new ProductDto
+        {
+            Slug = slug!,
+            Name = name!,
+            Description = description,
+            PriceCents = priceCents,
+            Per = per,
+            ImageUrl = imageUrl,
+            InStock = inStock,
+            Featured = featured,
+            Badges = badges
+        };
+    }
+
+    private static string? GetString(Dictionary<string, System.Text.Json.JsonElement> data, string key)
+    {
+        return data.TryGetValue(key, out var el) && el.ValueKind == JsonValueKind.String
+            ? el.GetString()
+            : null;
+    }
+
+    private static bool? GetBool(Dictionary<string, System.Text.Json.JsonElement> data, string key)
+    {
+        return data.TryGetValue(key, out var el) && el.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? el.GetBoolean()
+            : null;
     }
 
     private static string? ResolveUrl(string? url, string baseUrl)

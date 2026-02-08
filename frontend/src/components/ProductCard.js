@@ -5,9 +5,11 @@ export default function ProductCard({ product, onAdd }) {
     <article className="card">
       <div className="card-media">
         {product.imageUrl ? (
-          <div
+          <img
             className="card-image"
-            style={{ backgroundImage: `url(${product.imageUrl})` }}
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
           />
         ) : (
           <div className="card-image placeholder">No image</div>

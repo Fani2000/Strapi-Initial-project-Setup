@@ -39,6 +39,23 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let alive = true;
+    const interval = setInterval(async () => {
+      try {
+        const p = await getProducts();
+        if (!alive) return;
+        setProducts(p.products || []);
+      } catch {
+        // ignore refresh errors
+      }
+    }, 60000);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   const cartItems = useMemo(() => cart, [cart]);
 
   function addToCart(product) {

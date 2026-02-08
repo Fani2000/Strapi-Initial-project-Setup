@@ -69,6 +69,12 @@ public sealed class ProductsService(
         await store.UpsertHomeAsync(home, ct);
     }
 
+    public void InvalidateCache()
+    {
+        cache.Remove("products");
+        cache.Remove("home");
+    }
+
     private static async Task<T> FetchWithRetriesAsync<T>(
         Func<CancellationToken, Task<T>> fetch,
         CancellationToken ct)

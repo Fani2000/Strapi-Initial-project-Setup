@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using NutsShop_Server.Shop;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,8 +26,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors();
 
 // apply migrations + seed from Strapi on startup
@@ -124,6 +125,15 @@ app.MapGet("/api/shop/pickup-locations", () =>
         id = kv.Key,
         name = kv.Value
     }));
+});
+
+app.MapPost("/api/webhooks/strapi", async (
+    ProductsService products,
+    CancellationToken ct) =>
+{
+    products.InvalidateCache();
+    await products.SeedFromStrapiAsync(ct);
+    return Results.Ok(new { ok = true });
 });
 
 app.Run();

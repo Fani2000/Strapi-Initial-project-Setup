@@ -5,9 +5,13 @@ export default function Hero({ hero }) {
     "Fresh roasted nuts, trail mixes, and premium crunch — delivered or pickup.";
   const promo =
     hero?.promoText || "Cape Town only • ZAR pricing • Same-day pickup options";
+  const heroImage = hero?.heroImageUrl || "";
 
   return (
-    <section className="hero">
+    <section
+      className={`hero ${heroImage ? "hero-image" : ""}`}
+      style={heroImage ? { backgroundImage: `url(${heroImage})` } : undefined}
+    >
       <div className="hero-glow" />
       <div className="hero-content">
         <p className="eyebrow">Cape Town Only</p>

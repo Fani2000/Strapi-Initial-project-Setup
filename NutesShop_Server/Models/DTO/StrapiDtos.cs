@@ -1,8 +1,16 @@
-namespace NutsShop_Server.Shop;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace NutesShop_Server.Shop;
 
 public sealed record StrapiResponse<T>(T Data);
 
-public sealed record StrapiEntry<T>(int Id, T Attributes);
+public sealed record StrapiEntry<T>(int Id, T? Attributes)
+{
+    // Strapi v5 can return flat entries without "attributes".
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 
 public sealed record StrapiRelationCollection<T>(List<StrapiEntry<T>> Data);
 

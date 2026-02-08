@@ -12,6 +12,7 @@ public static class HttpExtension
             if (!string.IsNullOrWhiteSpace(baseUrl))
                 client.BaseAddress = new Uri(baseUrl);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.Timeout = TimeSpan.FromSeconds(60);
 
             var token = cfg["STRAPI_API_TOKEN"];
             if (!string.IsNullOrWhiteSpace(token))
@@ -19,6 +20,13 @@ public static class HttpExtension
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
             }
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            // Keep attempt timeout below half of sampling duration (default 30s)
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+            options.Retry.MaxRetryAttempts = 3;
         });
     }
 }
