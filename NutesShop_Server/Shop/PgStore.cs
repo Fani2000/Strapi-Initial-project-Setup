@@ -2,7 +2,7 @@ using System.Data;
 using Dapper;
 using Npgsql;
 
-namespace NutesShop_Server.Shop;
+namespace NutsShop_Server.Shop;
 
 public sealed class PgStore
 {

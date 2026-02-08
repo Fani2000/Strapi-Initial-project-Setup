@@ -1,4 +1,4 @@
-namespace NutesShop_Server.Shop;
+namespace NutsShop_Server.Shop;
 
 public sealed record StrapiResponse<T>(T Data);
 

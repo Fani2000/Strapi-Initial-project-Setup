@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
-using NutesShop_Server.Shop;
+using NutsShop_Server.Shop;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +15,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<PgStore>();
 builder.Services.AddSingleton<MigrationRunner>();
 builder.Services.AddSingleton<ProductsService>();
+builder.Services.AddSingleton<StrapiService>();
 
-ProductsService.ConfigureHttpClient(builder.Services, builder.Configuration);
+builder.Services.ConfigureHttpClient(builder.Configuration);
 
 var app = builder.Build();
 

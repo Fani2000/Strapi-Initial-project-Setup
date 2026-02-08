@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace NutesShop_Server.Shop;
+namespace NutsShop_Server.Shop;
 
 public static class StrapiMapper
 {
