@@ -5,6 +5,30 @@ namespace NutsShop_Server.Shop;
 
 public static class StrapiMapper
 {
+    public static ThemeDto DefaultTheme()
+    {
+        return new ThemeDto(
+            Name: "Amber Bright",
+            Background: "#fff6e6",
+            BackgroundAccent: "#ffe3a3",
+            Card: "#fff3d4",
+            CardSoft: "rgba(255, 255, 255, 0.75)",
+            Text: "#2a1a05",
+            Muted: "rgba(42, 26, 5, 0.65)",
+            Accent: "#f59e0b",
+            Accent2: "#fbbf24",
+            TopbarBg: "rgba(255, 248, 230, 0.9)",
+            TopbarBorder: "rgba(245, 158, 11, 0.25)",
+            HeroGradient1: "#fff3d4",
+            HeroGradient2: "#ffe1a0",
+            HeroGradient3: "#ffd57a",
+            HeroOverlay1: "rgba(255, 255, 255, 0.15)",
+            HeroOverlay2: "rgba(255, 255, 255, 0.0)",
+            Glow: "rgba(245, 158, 11, 0.45)",
+            Shadow: "0 18px 40px rgba(245, 158, 11, 0.18)"
+        );
+    }
+
     public static IReadOnlyList<ProductDto> MapProducts(string json, string strapiBaseUrl)
     {
         using var doc = JsonDocument.Parse(json);
@@ -162,6 +186,41 @@ public static class StrapiMapper
         );
     }
 
+    public static ThemeDto MapTheme(
+        StrapiResponse<StrapiEntry<ThemeAttributes>> resp,
+        string strapiBaseUrl)
+    {
+        _ = strapiBaseUrl;
+        var defaults = DefaultTheme();
+        var ext = resp?.Data?.ExtensionData;
+        if (ext is not null && ext.Count > 0)
+            return MapThemeFromFlat(ext, defaults);
+
+        var a = resp?.Data?.Attributes;
+        if (a is null) return defaults;
+
+        return new ThemeDto(
+            Name: a.Name ?? defaults.Name,
+            Background: a.Background ?? defaults.Background,
+            BackgroundAccent: a.BackgroundAccent ?? defaults.BackgroundAccent,
+            Card: a.Card ?? defaults.Card,
+            CardSoft: a.CardSoft ?? defaults.CardSoft,
+            Text: a.Text ?? defaults.Text,
+            Muted: a.Muted ?? defaults.Muted,
+            Accent: a.Accent ?? defaults.Accent,
+            Accent2: a.Accent2 ?? defaults.Accent2,
+            TopbarBg: a.TopbarBg ?? defaults.TopbarBg,
+            TopbarBorder: a.TopbarBorder ?? defaults.TopbarBorder,
+            HeroGradient1: a.HeroGradient1 ?? defaults.HeroGradient1,
+            HeroGradient2: a.HeroGradient2 ?? defaults.HeroGradient2,
+            HeroGradient3: a.HeroGradient3 ?? defaults.HeroGradient3,
+            HeroOverlay1: a.HeroOverlay1 ?? defaults.HeroOverlay1,
+            HeroOverlay2: a.HeroOverlay2 ?? defaults.HeroOverlay2,
+            Glow: a.Glow ?? defaults.Glow,
+            Shadow: a.Shadow ?? defaults.Shadow
+        );
+    }
+
     private static HomePageDto MapHomeFromFlat(
         Dictionary<string, System.Text.Json.JsonElement> data,
         string strapiBaseUrl)
@@ -214,6 +273,32 @@ public static class StrapiMapper
             PromoText: promoText,
             HeroImageUrl: heroImageUrl,
             FeaturedProducts: featured
+        );
+    }
+
+    private static ThemeDto MapThemeFromFlat(
+        Dictionary<string, System.Text.Json.JsonElement> data,
+        ThemeDto defaults)
+    {
+        return new ThemeDto(
+            Name: GetString(data, "name") ?? defaults.Name,
+            Background: GetString(data, "background") ?? defaults.Background,
+            BackgroundAccent: GetString(data, "backgroundAccent") ?? defaults.BackgroundAccent,
+            Card: GetString(data, "card") ?? defaults.Card,
+            CardSoft: GetString(data, "cardSoft") ?? defaults.CardSoft,
+            Text: GetString(data, "text") ?? defaults.Text,
+            Muted: GetString(data, "muted") ?? defaults.Muted,
+            Accent: GetString(data, "accent") ?? defaults.Accent,
+            Accent2: GetString(data, "accent2") ?? defaults.Accent2,
+            TopbarBg: GetString(data, "topbarBg") ?? defaults.TopbarBg,
+            TopbarBorder: GetString(data, "topbarBorder") ?? defaults.TopbarBorder,
+            HeroGradient1: GetString(data, "heroGradient1") ?? defaults.HeroGradient1,
+            HeroGradient2: GetString(data, "heroGradient2") ?? defaults.HeroGradient2,
+            HeroGradient3: GetString(data, "heroGradient3") ?? defaults.HeroGradient3,
+            HeroOverlay1: GetString(data, "heroOverlay1") ?? defaults.HeroOverlay1,
+            HeroOverlay2: GetString(data, "heroOverlay2") ?? defaults.HeroOverlay2,
+            Glow: GetString(data, "glow") ?? defaults.Glow,
+            Shadow: GetString(data, "shadow") ?? defaults.Shadow
         );
     }
 

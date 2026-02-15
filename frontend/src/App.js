@@ -1,6 +1,6 @@
 import "./App.css";
 import { useEffect, useMemo, useState } from "react";
-import { getHome, getPickupLocations, getProducts } from "./api";
+import { getHome, getPickupLocations, getProducts, getTheme } from "./api";
 import CartDrawer from "./components/CartDrawer";
 import CheckoutPanel from "./components/CheckoutPanel";
 import Hero from "./components/Hero";
@@ -11,6 +11,7 @@ function App() {
   const [pickupLocations, setPickupLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [home, setHome] = useState(null);
+  const [theme, setTheme] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderId, setOrderId] = useState("");
@@ -20,15 +21,17 @@ function App() {
     let alive = true;
     async function load() {
       try {
-        const [p, h, pickups] = await Promise.all([
+        const [p, h, pickups, t] = await Promise.all([
           getProducts(),
           getHome(),
           getPickupLocations(),
+          getTheme(),
         ]);
         if (!alive) return;
         setProducts(p.products || []);
         setHome(h.home || null);
         setPickupLocations(pickups || []);
+        setTheme(t.theme || null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -38,6 +41,33 @@ function App() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!theme) return;
+    const root = document.documentElement;
+    const map = {
+      "--bg": theme.background,
+      "--bg-accent": theme.backgroundAccent,
+      "--card": theme.card,
+      "--card-soft": theme.cardSoft,
+      "--text": theme.text,
+      "--muted": theme.muted,
+      "--accent": theme.accent,
+      "--accent-2": theme.accent2,
+      "--topbar-bg": theme.topbarBg,
+      "--topbar-border": theme.topbarBorder,
+      "--hero-gradient-1": theme.heroGradient1,
+      "--hero-gradient-2": theme.heroGradient2,
+      "--hero-gradient-3": theme.heroGradient3,
+      "--hero-overlay-1": theme.heroOverlay1,
+      "--hero-overlay-2": theme.heroOverlay2,
+      "--glow": theme.glow,
+      "--shadow": theme.shadow,
+    };
+    Object.entries(map).forEach(([key, value]) => {
+      if (value) root.style.setProperty(key, value);
+    });
+  }, [theme]);
 
   useEffect(() => {
     let alive = true;

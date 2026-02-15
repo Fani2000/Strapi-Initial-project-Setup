@@ -41,4 +41,23 @@ public class StrapiService(IHttpClientFactory _httpFactory, IConfiguration _cfg)
             return new HomePageDto("", "", "", "", Array.Empty<ProductDto>());
         }
     }
+
+    public async Task<ThemeDto> FetchThemeFromStrapiAsync(CancellationToken ct)
+    {
+        var http = _httpFactory.CreateClient("strapi");
+        try
+        {
+            var resp = await http.GetAsync("/api/theme", ct);
+            resp.EnsureSuccessStatusCode();
+
+            var dto = await resp.Content.ReadFromJsonAsync<StrapiResponse<StrapiEntry<ThemeAttributes>>>(cancellationToken: ct);
+            if (dto is null) return StrapiMapper.DefaultTheme();
+            var baseUrl = _cfg["STRAPI_BASE_URL"] ?? "";
+            return StrapiMapper.MapTheme(dto, baseUrl);
+        }
+        catch
+        {
+            return StrapiMapper.DefaultTheme();
+        }
+    }
 }

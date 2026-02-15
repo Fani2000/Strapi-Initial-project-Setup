@@ -57,6 +57,24 @@ public sealed class ProductsService(
         return fresh;
     }
 
+    public async Task<ThemeDto> GetThemeAsync(CancellationToken ct)
+    {
+        if (cache.TryGetValue("theme", out ThemeDto? cached) && cached is not null)
+            return cached;
+
+        var fromDb = await store.GetThemeAsync(ct);
+        if (fromDb is not null)
+        {
+            cache.Set("theme", fromDb, MemoryTtl);
+            return fromDb;
+        }
+
+        var fresh = await strapiService.FetchThemeFromStrapiAsync(ct);
+        await store.UpsertThemeAsync(fresh, ct);
+        cache.Set("theme", fresh, MemoryTtl);
+        return fresh;
+    }
+
     public async Task SeedFromStrapiAsync(CancellationToken ct)
     {
         var products = await FetchWithRetriesAsync(strapiService.FetchFromStrapiAsync, ct);
@@ -67,12 +85,16 @@ public sealed class ProductsService(
 
         var home = await FetchWithRetriesAsync(strapiService.FetchHomeFromStrapiAsync, ct);
         await store.UpsertHomeAsync(home, ct);
+
+        var theme = await FetchWithRetriesAsync(strapiService.FetchThemeFromStrapiAsync, ct);
+        await store.UpsertThemeAsync(theme, ct);
     }
 
     public void InvalidateCache()
     {
         cache.Remove("products");
         cache.Remove("home");
+        cache.Remove("theme");
     }
 
     private static async Task<T> FetchWithRetriesAsync<T>(
@@ -104,6 +126,9 @@ public sealed class ProductsService(
                    || !string.IsNullOrWhiteSpace(home.HeroSubtitle)
                    || !string.IsNullOrWhiteSpace(home.PromoText)
                    || (home.FeaturedProducts?.Length ?? 0) > 0;
+
+        if (result is ThemeDto theme)
+            return !string.IsNullOrWhiteSpace(theme.Name);
 
         return result is not null;
     }

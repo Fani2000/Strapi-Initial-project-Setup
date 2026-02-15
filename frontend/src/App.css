@@ -1,12 +1,21 @@
 :root {
-  --bg: #0b0d10;
-  --card: #12161d;
-  --card-soft: rgba(255, 255, 255, 0.06);
-  --text: #f5f2ec;
-  --muted: rgba(245, 242, 236, 0.65);
-  --accent: #f4b266;
-  --accent-2: #f8d27a;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  --bg: #fff6e6;
+  --bg-accent: #ffe3a3;
+  --card: #fff3d4;
+  --card-soft: rgba(255, 255, 255, 0.75);
+  --text: #2a1a05;
+  --muted: rgba(42, 26, 5, 0.65);
+  --accent: #f59e0b;
+  --accent-2: #fbbf24;
+  --topbar-bg: rgba(255, 248, 230, 0.9);
+  --topbar-border: rgba(245, 158, 11, 0.25);
+  --hero-gradient-1: #fff3d4;
+  --hero-gradient-2: #ffe1a0;
+  --hero-gradient-3: #ffd57a;
+  --hero-overlay-1: rgba(255, 255, 255, 0.15);
+  --hero-overlay-2: rgba(255, 255, 255, 0);
+  --glow: rgba(245, 158, 11, 0.45);
+  --shadow: 0 18px 40px rgba(245, 158, 11, 0.18);
 }
 
 * {
@@ -15,7 +24,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top right, #202632 0%, #0b0d10 45%);
+  background: radial-gradient(circle at top right, var(--bg-accent) 0%, var(--bg) 55%);
   color: var(--text);
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
 }
@@ -32,9 +41,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 18px 32px;
-  background: rgba(11, 13, 16, 0.8);
+  background: var(--topbar-bg);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--topbar-border);
 }
 
 .brand {
@@ -56,7 +65,12 @@ main {
   position: relative;
   border-radius: 28px;
   padding: 60px 48px;
-  background: linear-gradient(120deg, #191f28 0%, #141a22 50%, #0f141b 100%);
+  background: linear-gradient(
+    120deg,
+    var(--hero-gradient-1) 0%,
+    var(--hero-gradient-2) 50%,
+    var(--hero-gradient-3) 100%
+  );
   box-shadow: var(--shadow);
   overflow: hidden;
 }
@@ -70,7 +84,7 @@ main {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(11, 13, 16, 0.8), rgba(11, 13, 16, 0.5));
+  background: linear-gradient(120deg, var(--hero-overlay-1), var(--hero-overlay-2));
 }
 
 .hero-glow {
@@ -79,7 +93,7 @@ main {
   height: 260px;
   right: -60px;
   top: -80px;
-  background: radial-gradient(circle, rgba(244, 178, 102, 0.55), transparent 70%);
+  background: radial-gradient(circle, var(--glow), transparent 70%);
   filter: blur(20px);
 }
 
@@ -165,7 +179,7 @@ main {
   background: var(--card);
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--topbar-border);
   display: flex;
   flex-direction: column;
   min-height: 360px;
@@ -174,7 +188,7 @@ main {
 
 .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow);
 }
 
 .card-media {
@@ -194,7 +208,7 @@ main {
   display: grid;
   place-items: center;
   color: var(--muted);
-  background: linear-gradient(120deg, #1a202b, #12161d);
+  background: linear-gradient(120deg, var(--card), var(--bg-accent));
 }
 
 .card-body {
@@ -239,13 +253,13 @@ main {
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--card-soft);
 }
 
 .btn {
   border: none;
   background: var(--accent);
-  color: #1d1309;
+  color: var(--text);
   padding: 10px 16px;
   border-radius: 999px;
   font-weight: 600;
@@ -265,7 +279,7 @@ main {
 .btn.ghost {
   background: transparent;
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--topbar-border);
 }
 
 .btn.primary {
@@ -280,7 +294,7 @@ main {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 8, 10, 0.65);
+  background: rgba(42, 26, 5, 0.35);
   display: grid;
   place-items: center;
   padding: 20px;
@@ -369,8 +383,8 @@ main {
 
 .segment input,
 .segment select {
-  background: #0f1319;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border: 1px solid var(--topbar-border);
   color: var(--text);
   padding: 10px 12px;
   border-radius: 12px;
@@ -384,7 +398,7 @@ main {
 
 .toggle button {
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--topbar-border);
   background: transparent;
   color: var(--text);
   padding: 10px;
@@ -393,7 +407,7 @@ main {
 
 .toggle button.active {
   background: var(--accent);
-  color: #1d1309;
+  color: var(--text);
 }
 
 .error {

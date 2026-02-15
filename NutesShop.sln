@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NutesShop_Server", "NutesSh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NutesShop.ServiceDefaults", "NutesShop.ServiceDefaults\NutesShop.ServiceDefaults.csproj", "{C34E3F15-809D-430F-BA6B-C36FACC60E4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NutesShop.Frontend", "frontend\NutesShop.Frontend.csproj", "{D30914AE-343C-42CF-87CA-E5010F32805B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NutesShop.NutappStrapi", "nutapp-strapi\NutesShop.NutappStrapi.csproj", "{548A5D93-467C-4F27-B8F5-0C663ED80C51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{C34E3F15-809D-430F-BA6B-C36FACC60E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C34E3F15-809D-430F-BA6B-C36FACC60E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C34E3F15-809D-430F-BA6B-C36FACC60E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D30914AE-343C-42CF-87CA-E5010F32805B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D30914AE-343C-42CF-87CA-E5010F32805B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D30914AE-343C-42CF-87CA-E5010F32805B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D30914AE-343C-42CF-87CA-E5010F32805B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{548A5D93-467C-4F27-B8F5-0C663ED80C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{548A5D93-467C-4F27-B8F5-0C663ED80C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{548A5D93-467C-4F27-B8F5-0C663ED80C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{548A5D93-467C-4F27-B8F5-0C663ED80C51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

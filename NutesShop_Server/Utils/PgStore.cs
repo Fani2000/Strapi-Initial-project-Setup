@@ -124,6 +124,50 @@ public sealed class PgStore
         );
     }
 
+    public async Task UpsertThemeAsync(ThemeDto theme, CancellationToken ct)
+    {
+        using var conn = await OpenAsync(ct);
+        await conn.ExecuteAsync(new CommandDefinition("""
+            select upsert_theme(
+              @Name, @Background, @BackgroundAccent, @Card, @CardSoft, @Text, @Muted,
+              @Accent, @Accent2, @TopbarBg, @TopbarBorder,
+              @HeroGradient1, @HeroGradient2, @HeroGradient3,
+              @HeroOverlay1, @HeroOverlay2, @Glow, @Shadow
+            );
+        """, theme, cancellationToken: ct));
+    }
+
+    public async Task<ThemeDto?> GetThemeAsync(CancellationToken ct)
+    {
+        using var conn = await OpenAsync(ct);
+        var row = await conn.QuerySingleOrDefaultAsync(new CommandDefinition("""
+        select * from get_theme();
+        """, cancellationToken: ct));
+
+        if (row is null) return null;
+
+        return new ThemeDto(
+            Name: row.name,
+            Background: row.background,
+            BackgroundAccent: row.background_accent,
+            Card: row.card,
+            CardSoft: row.card_soft,
+            Text: row.text,
+            Muted: row.muted,
+            Accent: row.accent,
+            Accent2: row.accent_2,
+            TopbarBg: row.topbar_bg,
+            TopbarBorder: row.topbar_border,
+            HeroGradient1: row.hero_gradient_1,
+            HeroGradient2: row.hero_gradient_2,
+            HeroGradient3: row.hero_gradient_3,
+            HeroOverlay1: row.hero_overlay_1,
+            HeroOverlay2: row.hero_overlay_2,
+            Glow: row.glow,
+            Shadow: row.shadow
+        );
+    }
+
     public async Task<Guid> CreateOrderAsync(CreateOrderRequest req, CancellationToken ct)
     {
         using var conn = await OpenAsync(ct);

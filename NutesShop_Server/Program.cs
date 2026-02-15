@@ -68,6 +68,14 @@ app.MapGet("/api/shop/home", async (
     return Results.Ok(new { currency = "ZAR", home });
 });
 
+app.MapGet("/api/shop/theme", async (
+    ProductsService products,
+    CancellationToken ct) =>
+{
+    var theme = await products.GetThemeAsync(ct);
+    return Results.Ok(new { theme });
+});
+
 app.MapPost("/api/shop/checkout", async (
     CheckoutRequest req,
     ProductsService products,

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+  <PropertyGroup>
+    <ProjectName>NutesShop.NutappStrapi</ProjectName>
+    <RootNamespace>NutesShop.NutappStrapi</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="package.json" />
+    <None Include="package-lock.json" />
+    <None Include="favicon.png" />
+    <None Include="config\**\*" />
+    <None Include="database\**\*" />
+    <None Include="dist\**\*" />
+    <None Include="public\**\*" />
+    <None Include="src\**\*" />
+    <None Include="types\**\*" />
+    <None Include="tsconfig.json" />
+  </ItemGroup>
+</Project>
