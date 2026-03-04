@@ -38,7 +38,7 @@ using (var scope = app.Services.CreateScope())
     var migrator = scope.ServiceProvider.GetRequiredService<MigrationRunner>();
     await migrator.ApplyAsync(CancellationToken.None);
     var products = scope.ServiceProvider.GetRequiredService<ProductsService>();
-    await products.SeedFromStrapiAsync(CancellationToken.None);
+    await products.EnsureInitialDataAsync(CancellationToken.None);
 }
 
 app.MapGet("/api/shop/products", async (
@@ -123,7 +123,19 @@ app.MapPost("/api/shop/checkout", async (
         Items: items.ToArray()
     ), ct);
 
-    return Results.Ok(new { orderId, currency = "ZAR" });
+    var savedOrder = await store.GetOrderAsync(orderId, ct);
+    return Results.Ok(new { orderId, order = savedOrder, currency = "ZAR" });
+});
+
+app.MapGet("/api/shop/orders/{orderId:guid}", async (
+    Guid orderId,
+    PgStore store,
+    CancellationToken ct) =>
+{
+    var order = await store.GetOrderAsync(orderId, ct);
+    return order is null
+        ? Results.NotFound()
+        : Results.Ok(new { order, currency = "ZAR" });
 });
 
 app.MapGet("/api/shop/pickup-locations", () =>

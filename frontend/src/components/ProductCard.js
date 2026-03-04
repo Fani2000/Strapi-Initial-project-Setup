@@ -16,11 +16,11 @@ export default function ProductCard({ product, onAdd }) {
         )}
       </div>
       <div className="card-body">
+        <div className="price-chip">
+          from {formatZar(product.priceCents)} / {product.per}
+        </div>
         <div className="card-title">
           <h3>{product.name}</h3>
-          <span className="price">
-            {formatZar(product.priceCents)} / {product.per}
-          </span>
         </div>
         <p className="card-desc">{product.description}</p>
         <div className="badge-row">
@@ -30,13 +30,19 @@ export default function ProductCard({ product, onAdd }) {
             </span>
           ))}
         </div>
-        <button
-          className="btn"
-          disabled={!product.inStock}
-          onClick={() => onAdd(product)}
-        >
-          {product.inStock ? "Add to cart" : "Out of stock"}
-        </button>
+        <div className="card-footer">
+          <span className={`stock ${product.inStock ? "in" : "out"}`}>
+            {product.inStock ? "In stock" : "Out of stock"}
+          </span>
+          <button
+            className="add-btn"
+            disabled={!product.inStock}
+            onClick={() => onAdd(product)}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            +
+          </button>
+        </div>
       </div>
     </article>
   );

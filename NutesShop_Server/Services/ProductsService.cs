@@ -52,7 +52,10 @@ public sealed class ProductsService(
         }
 
         var fresh = await strapiService.FetchHomeFromStrapiAsync(ct);
-        await store.UpsertHomeAsync(fresh, ct);
+        if (HasData(fresh))
+        {
+            await store.UpsertHomeAsync(fresh, ct);
+        }
         cache.Set("home", fresh, MemoryTtl);
         return fresh;
     }
@@ -70,9 +73,45 @@ public sealed class ProductsService(
         }
 
         var fresh = await strapiService.FetchThemeFromStrapiAsync(ct);
-        await store.UpsertThemeAsync(fresh, ct);
+        if (HasData(fresh))
+        {
+            await store.UpsertThemeAsync(fresh, ct);
+        }
         cache.Set("theme", fresh, MemoryTtl);
         return fresh;
+    }
+
+    public async Task EnsureInitialDataAsync(CancellationToken ct)
+    {
+        var existingProducts = await store.GetProductsAsync(ct);
+        if (existingProducts.Count == 0)
+        {
+            var products = await FetchWithRetriesAsync(strapiService.FetchFromStrapiAsync, ct);
+            if (products.Count > 0)
+            {
+                await store.UpsertProductsAsync(products, ct);
+            }
+        }
+
+        var existingHome = await store.GetHomeAsync(ct);
+        if (existingHome is null)
+        {
+            var home = await FetchWithRetriesAsync(strapiService.FetchHomeFromStrapiAsync, ct);
+            if (HasData(home))
+            {
+                await store.UpsertHomeAsync(home, ct);
+            }
+        }
+
+        var existingTheme = await store.GetThemeAsync(ct);
+        if (existingTheme is null)
+        {
+            var theme = await FetchWithRetriesAsync(strapiService.FetchThemeFromStrapiAsync, ct);
+            if (HasData(theme))
+            {
+                await store.UpsertThemeAsync(theme, ct);
+            }
+        }
     }
 
     public async Task SeedFromStrapiAsync(CancellationToken ct)
@@ -84,10 +123,16 @@ public sealed class ProductsService(
         }
 
         var home = await FetchWithRetriesAsync(strapiService.FetchHomeFromStrapiAsync, ct);
-        await store.UpsertHomeAsync(home, ct);
+        if (HasData(home))
+        {
+            await store.UpsertHomeAsync(home, ct);
+        }
 
         var theme = await FetchWithRetriesAsync(strapiService.FetchThemeFromStrapiAsync, ct);
-        await store.UpsertThemeAsync(theme, ct);
+        if (HasData(theme))
+        {
+            await store.UpsertThemeAsync(theme, ct);
+        }
     }
 
     public void InvalidateCache()

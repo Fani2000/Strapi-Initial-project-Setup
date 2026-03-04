@@ -1,6 +1,13 @@
 import "./App.css";
 import { useEffect, useMemo, useState } from "react";
-import { getHome, getPickupLocations, getProducts, getTheme } from "./api";
+import {
+  formatZar,
+  getHome,
+  getOrder,
+  getPickupLocations,
+  getProducts,
+  getTheme,
+} from "./api";
 import CartDrawer from "./components/CartDrawer";
 import CheckoutPanel from "./components/CheckoutPanel";
 import Hero from "./components/Hero";
@@ -15,6 +22,7 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [orderDetails, setOrderDetails] = useState(null);
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
@@ -117,18 +125,59 @@ function App() {
     );
   }
 
-  function handleCheckoutComplete(id) {
+  async function handleCheckoutComplete(id, order) {
     setOrderId(id);
+    setOrderDetails(order);
     setCheckoutOpen(false);
     setCartOpen(false);
     setCart([]);
   }
 
+  useEffect(() => {
+    let alive = true;
+    if (!orderId || orderDetails) return () => {};
+
+    async function loadOrder() {
+      try {
+        const res = await getOrder(orderId);
+        if (!alive) return;
+        setOrderDetails(res.order || null);
+      } catch {
+        // ignore order fetch errors
+      }
+    }
+
+    loadOrder();
+    return () => {
+      alive = false;
+    };
+  }, [orderId, orderDetails]);
+
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">NutsShop</div>
+        <div className="brand">
+          <span className="brand-mark">NS</span>
+          <span>NutsShop</span>
+        </div>
+        <nav className="topnav">
+          <a href="#catalog" className="topnav-link active">
+            Catalog
+          </a>
+          <a href="#delivery" className="topnav-link">
+            Delivery
+          </a>
+          <a href="#contacts" className="topnav-link">
+            Contact
+          </a>
+          <a href="#about" className="topnav-link">
+            About
+          </a>
+        </nav>
         <div className="actions">
+          <button className="icon-btn" aria-label="Search">
+            Search
+          </button>
           <button className="btn ghost" onClick={() => setCartOpen(true)}>
             Cart ({cartItems.length})
           </button>
@@ -137,10 +186,12 @@ function App() {
 
       <main>
         <Hero hero={home} />
-        <section className="section">
+        <section className="section" id="catalog">
           <div className="section-head">
-            <h2>Featured Nuts</h2>
-            <p className="muted">Fresh batches, roasted locally in Cape Town.</p>
+            <h2>Popular Healthy Snacks</h2>
+            <p className="muted">
+              Roasted fresh, packed with care, and ready for quick checkout.
+            </p>
           </div>
 
           {loading ? (
@@ -161,6 +212,28 @@ function App() {
           <section className="section success">
             <h3>Order placed</h3>
             <p className="muted">Order ID: {orderId}</p>
+            {orderDetails ? (
+              <>
+                <p className="muted">
+                  Status: {orderDetails.status} | Total:{" "}
+                  {formatZar(orderDetails.totalCents)}
+                </p>
+                {orderDetails.items?.length ? (
+                  <div className="order-items">
+                    {orderDetails.items.map((item) => (
+                      <div key={item.productSlug} className="order-item-row">
+                        <span>
+                          {item.quantity} x {item.productName}
+                        </span>
+                        <strong>
+                          {formatZar(item.unitPriceCents * item.quantity)}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </section>
         ) : null}
       </main>

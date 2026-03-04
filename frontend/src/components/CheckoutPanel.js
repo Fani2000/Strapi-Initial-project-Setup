@@ -47,7 +47,7 @@ export default function CheckoutPanel({
     setError("");
     try {
       const res = await checkout(payload);
-      onComplete(res.orderId);
+      onComplete(res.orderId, res.order || null);
     } catch (err) {
       setError(err.message || "Checkout failed");
     } finally {

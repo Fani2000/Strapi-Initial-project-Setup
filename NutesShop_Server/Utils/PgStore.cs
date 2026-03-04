@@ -208,4 +208,74 @@ public sealed class PgStore
 
         return orderId;
     }
+
+    public async Task<OrderDto?> GetOrderAsync(Guid orderId, CancellationToken ct)
+    {
+        using var conn = await OpenAsync(ct);
+
+        var header = await conn.QuerySingleOrDefaultAsync<OrderHeaderRow>(new CommandDefinition("""
+            select
+              id as "Id",
+              created_at as "CreatedAt",
+              customer_name as "CustomerName",
+              customer_email as "CustomerEmail",
+              fulfillment_type as "FulfillmentType",
+              city as "City",
+              suburb as "Suburb",
+              address_line1 as "AddressLine1",
+              address_line2 as "AddressLine2",
+              postal_code as "PostalCode",
+              pickup_location as "PickupLocation",
+              status as "Status",
+              total_cents as "TotalCents"
+            from orders
+            where id = @OrderId;
+        """, new { OrderId = orderId }, cancellationToken: ct));
+
+        if (header is null) return null;
+
+        var items = (await conn.QueryAsync<OrderItemDto>(new CommandDefinition("""
+            select
+              product_slug as "ProductSlug",
+              product_name as "ProductName",
+              unit_price_cents as "UnitPriceCents",
+              quantity as "Quantity"
+            from order_items
+            where order_id = @OrderId
+            order by product_name;
+        """, new { OrderId = orderId }, cancellationToken: ct))).ToArray();
+
+        return new OrderDto(
+            header.Id,
+            header.CreatedAt,
+            header.CustomerName,
+            header.CustomerEmail,
+            header.FulfillmentType,
+            header.City,
+            header.Suburb,
+            header.AddressLine1,
+            header.AddressLine2,
+            header.PostalCode,
+            header.PickupLocation,
+            header.Status,
+            header.TotalCents,
+            items
+        );
+    }
+
+    private sealed record OrderHeaderRow(
+        Guid Id,
+        DateTime CreatedAt,
+        string CustomerName,
+        string CustomerEmail,
+        string FulfillmentType,
+        string City,
+        string? Suburb,
+        string? AddressLine1,
+        string? AddressLine2,
+        string? PostalCode,
+        string? PickupLocation,
+        string Status,
+        int TotalCents
+    );
 }

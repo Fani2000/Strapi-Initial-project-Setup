@@ -33,6 +33,10 @@ export async function checkout(payload) {
   });
 }
 
+export async function getOrder(orderId) {
+  return request(`/api/shop/orders/${orderId}`);
+}
+
 export function formatZar(cents) {
   const rands = cents / 100;
   return new Intl.NumberFormat("en-ZA", {

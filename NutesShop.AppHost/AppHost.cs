@@ -1,4 +1,7 @@
+using Microsoft.Extensions.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
+var isDevelopment = builder.Environment.IsDevelopment();
 
 // Infra
 var redis = builder.AddRedis("redis"); 
@@ -37,7 +40,9 @@ var api = builder.AddProject<Projects.NutesShop_Server>("api")
 var web = builder.AddNpmApp("webfrontend", "../frontend", scriptName: "start")
     .WithReference(api)
     .WaitFor(api)
-    .WithEnvironment("REACT_APP_API_BASE_URL", api.GetEndpoint("api-http"))
+    .WithEnvironment(
+        "REACT_APP_API_BASE_URL",
+        api.GetEndpoint(isDevelopment ? "api-http" : "api-https"))
     .WithHttpEndpoint(env: "PORT", name: "web-http");
 
 builder.Build().Run();

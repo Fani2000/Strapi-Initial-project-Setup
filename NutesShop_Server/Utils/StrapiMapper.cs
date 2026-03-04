@@ -8,24 +8,24 @@ public static class StrapiMapper
     public static ThemeDto DefaultTheme()
     {
         return new ThemeDto(
-            Name: "Amber Bright",
-            Background: "#fff6e6",
-            BackgroundAccent: "#ffe3a3",
-            Card: "#fff3d4",
-            CardSoft: "rgba(255, 255, 255, 0.75)",
-            Text: "#2a1a05",
-            Muted: "rgba(42, 26, 5, 0.65)",
-            Accent: "#f59e0b",
-            Accent2: "#fbbf24",
-            TopbarBg: "rgba(255, 248, 230, 0.9)",
-            TopbarBorder: "rgba(245, 158, 11, 0.25)",
-            HeroGradient1: "#fff3d4",
-            HeroGradient2: "#ffe1a0",
-            HeroGradient3: "#ffd57a",
-            HeroOverlay1: "rgba(255, 255, 255, 0.15)",
-            HeroOverlay2: "rgba(255, 255, 255, 0.0)",
-            Glow: "rgba(245, 158, 11, 0.45)",
-            Shadow: "0 18px 40px rgba(245, 158, 11, 0.18)"
+            Name: "Sunny Nut Market",
+            Background: "#fffdf8",
+            BackgroundAccent: "#f6ecd8",
+            Card: "#ffffff",
+            CardSoft: "rgba(248, 241, 226, 0.8)",
+            Text: "#2f2a1f",
+            Muted: "rgba(47, 42, 31, 0.68)",
+            Accent: "#8a6a2f",
+            Accent2: "#6ea06b",
+            TopbarBg: "rgba(255, 253, 248, 0.92)",
+            TopbarBorder: "rgba(138, 106, 47, 0.22)",
+            HeroGradient1: "#fff7e8",
+            HeroGradient2: "#f4e3c1",
+            HeroGradient3: "#dcefd2",
+            HeroOverlay1: "rgba(255, 255, 255, 0.20)",
+            HeroOverlay2: "rgba(255, 255, 255, 0.02)",
+            Glow: "rgba(110, 160, 107, 0.28)",
+            Shadow: "0 18px 38px rgba(81, 66, 36, 0.14)"
         );
     }
 
