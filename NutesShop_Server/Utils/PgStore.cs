@@ -124,6 +124,64 @@ public sealed class PgStore
         );
     }
 
+    public async Task UpsertPagesAsync(SitePagesDto pages, CancellationToken ct)
+    {
+        using var conn = await OpenAsync(ct);
+        var testimonialsJson = System.Text.Json.JsonSerializer.Serialize(pages.Testimonials);
+        await conn.ExecuteAsync(new CommandDefinition("""
+            select upsert_site_pages(
+              @DeliveryTitle, @DeliveryContent, @AboutTitle, @AboutContent,
+              @ContactTitle, @ContactContent, @Testimonials::jsonb
+            );
+        """, new
+        {
+            pages.DeliveryTitle,
+            pages.DeliveryContent,
+            pages.AboutTitle,
+            pages.AboutContent,
+            pages.ContactTitle,
+            pages.ContactContent,
+            Testimonials = testimonialsJson
+        }, cancellationToken: ct));
+    }
+
+    public async Task<SitePagesDto?> GetPagesAsync(CancellationToken ct)
+    {
+        using var conn = await OpenAsync(ct);
+        var row = await conn.QuerySingleOrDefaultAsync(new CommandDefinition("""
+        select * from get_site_pages();
+        """, cancellationToken: ct));
+
+        if (row is null) return null;
+        var testimonials = Array.Empty<TestimonialDto>();
+        if (row.testimonials is not null)
+        {
+            string json = row.testimonials?.ToString() ?? "[]";
+            var loaded = System.Text.Json.JsonSerializer.Deserialize<TestimonialDto[]>(json)
+                         ?? Array.Empty<TestimonialDto>();
+            var normalized = new List<TestimonialDto>(loaded.Length);
+            foreach (var t in loaded)
+            {
+                normalized.Add(new TestimonialDto(
+                    Name: t.Name ?? "",
+                    Feedback: t.Feedback ?? "",
+                    ImageUrl: t.ImageUrl ?? ""));
+            }
+
+            testimonials = normalized.ToArray();
+        }
+
+        return new SitePagesDto(
+            DeliveryTitle: row.delivery_title ?? "",
+            DeliveryContent: row.delivery_content ?? "",
+            AboutTitle: row.about_title ?? "",
+            AboutContent: row.about_content ?? "",
+            ContactTitle: row.contact_title ?? "",
+            ContactContent: row.contact_content ?? "",
+            Testimonials: testimonials
+        );
+    }
+
     public async Task UpsertThemeAsync(ThemeDto theme, CancellationToken ct)
     {
         using var conn = await OpenAsync(ct);

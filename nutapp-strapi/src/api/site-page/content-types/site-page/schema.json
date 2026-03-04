@@ -1,0 +1,38 @@
+{
+  "kind": "singleType",
+  "collectionName": "site_pages",
+  "info": {
+    "singularName": "site-page",
+    "pluralName": "site-pages",
+    "displayName": "SitePage"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "deliveryTitle": {
+      "type": "string"
+    },
+    "deliveryContent": {
+      "type": "richtext"
+    },
+    "aboutTitle": {
+      "type": "string"
+    },
+    "aboutContent": {
+      "type": "richtext"
+    },
+    "contactTitle": {
+      "type": "string"
+    },
+    "contactContent": {
+      "type": "richtext"
+    },
+    "testimonials": {
+      "type": "component",
+      "repeatable": true,
+      "component": "common.testimonial"
+    }
+  }
+}

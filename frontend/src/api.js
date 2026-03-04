@@ -21,6 +21,10 @@ export async function getTheme() {
   return request("/api/shop/theme");
 }
 
+export async function getPages() {
+  return request("/api/shop/pages");
+}
+
 export async function getPickupLocations() {
   return request("/api/shop/pickup-locations");
 }

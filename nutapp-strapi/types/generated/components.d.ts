@@ -48,12 +48,25 @@ export interface CommonPrice extends Struct.ComponentSchema {
   };
 }
 
+export interface CommonTestimonial extends Struct.ComponentSchema {
+  collectionName: 'components_common_testimonials';
+  info: {
+    displayName: 'Testimonial';
+  };
+  attributes: {
+    feedback: Schema.Attribute.Text;
+    image: Schema.Attribute.Media<'images'>;
+    name: Schema.Attribute.String;
+  };
+}
+
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
       'common.badge': CommonBadge;
       'common.nutrition': CommonNutrition;
       'common.price': CommonPrice;
+      'common.testimonial': CommonTestimonial;
     }
   }
 }

@@ -1,9 +1,11 @@
 import "./App.css";
 import { useEffect, useMemo, useState } from "react";
+import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import {
   formatZar,
   getHome,
   getOrder,
+  getPages,
   getPickupLocations,
   getProducts,
   getTheme,
@@ -13,11 +15,33 @@ import CheckoutPanel from "./components/CheckoutPanel";
 import Hero from "./components/Hero";
 import ProductCard from "./components/ProductCard";
 
+const defaultTestimonials = [
+  {
+    name: "Lindiwe Jacobs",
+    feedback:
+      "Always fresh and consistent. The mixed nuts are now a permanent office snack.",
+    imageUrl: "",
+  },
+  {
+    name: "Ryan Daniels",
+    feedback:
+      "Fast delivery in Cape Town and quality is excellent. The roasted almonds are top tier.",
+    imageUrl: "",
+  },
+  {
+    name: "Nadia Petersen",
+    feedback:
+      "Great healthy option for lunchboxes. Ordering is simple and support is responsive.",
+    imageUrl: "",
+  },
+];
+
 function App() {
   const [products, setProducts] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [home, setHome] = useState(null);
+  const [pages, setPages] = useState(null);
   const [theme, setTheme] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -29,17 +53,19 @@ function App() {
     let alive = true;
     async function load() {
       try {
-        const [p, h, pickups, t] = await Promise.all([
+        const [p, h, pickups, t, pg] = await Promise.all([
           getProducts(),
           getHome(),
           getPickupLocations(),
           getTheme(),
+          getPages(),
         ]);
         if (!alive) return;
         setProducts(p.products || []);
         setHome(h.home || null);
         setPickupLocations(pickups || []);
         setTheme(t.theme || null);
+        setPages(pg.pages || null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -153,6 +179,23 @@ function App() {
     };
   }, [orderId, orderDetails]);
 
+  const pageContent = {
+    deliveryTitle: pages?.deliveryTitle || "Delivery",
+    deliveryContent:
+      pages?.deliveryContent ||
+      "We currently deliver across Cape Town. Place your order before 16:00 for next-day delivery.",
+    aboutTitle: pages?.aboutTitle || "About Us",
+    aboutContent:
+      pages?.aboutContent ||
+      "NutsShop sources premium nuts and healthy snacks, roasted and packed fresh for every order.",
+    contactTitle: pages?.contactTitle || "Contact",
+    contactContent:
+      pages?.contactContent ||
+      "Need help with an order? Reach us at support@nuteshop.local.",
+    testimonials:
+      pages?.testimonials?.length > 0 ? pages.testimonials : defaultTestimonials,
+  };
+
   return (
     <div className="app">
       <header className="topbar">
@@ -161,18 +204,39 @@ function App() {
           <span>NutsShop</span>
         </div>
         <nav className="topnav">
-          <a href="#catalog" className="topnav-link active">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `topnav-link${isActive ? " active" : ""}`
+            }
+          >
             Catalog
-          </a>
-          <a href="#delivery" className="topnav-link">
+          </NavLink>
+          <NavLink
+            to="/delivery"
+            className={({ isActive }) =>
+              `topnav-link${isActive ? " active" : ""}`
+            }
+          >
             Delivery
-          </a>
-          <a href="#contacts" className="topnav-link">
+          </NavLink>
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              `topnav-link${isActive ? " active" : ""}`
+            }
+          >
             Contact
-          </a>
-          <a href="#about" className="topnav-link">
+          </NavLink>
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              `topnav-link${isActive ? " active" : ""}`
+            }
+          >
             About
-          </a>
+          </NavLink>
         </nav>
         <div className="actions">
           <button className="icon-btn" aria-label="Search">
@@ -185,57 +249,156 @@ function App() {
       </header>
 
       <main>
-        <Hero hero={home} />
-        <section className="section" id="catalog">
-          <div className="section-head">
-            <h2>Popular Healthy Snacks</h2>
-            <p className="muted">
-              Roasted fresh, packed with care, and ready for quick checkout.
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="loading">Loading the crunch...</div>
-          ) : (
-            <div className="grid">
-              {(home?.featuredProducts?.length
-                ? home.featuredProducts
-                : products
-              ).map((p) => (
-                <ProductCard key={p.slug} product={p} onAdd={addToCart} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {orderId ? (
-          <section className="section success">
-            <h3>Order placed</h3>
-            <p className="muted">Order ID: {orderId}</p>
-            {orderDetails ? (
+        <Routes>
+          <Route
+            path="/"
+            element={
               <>
-                <p className="muted">
-                  Status: {orderDetails.status} | Total:{" "}
-                  {formatZar(orderDetails.totalCents)}
-                </p>
-                {orderDetails.items?.length ? (
-                  <div className="order-items">
-                    {orderDetails.items.map((item) => (
-                      <div key={item.productSlug} className="order-item-row">
-                        <span>
-                          {item.quantity} x {item.productName}
-                        </span>
-                        <strong>
-                          {formatZar(item.unitPriceCents * item.quantity)}
-                        </strong>
-                      </div>
-                    ))}
+                <Hero hero={home} />
+                <section className="section" id="catalog">
+                  <div className="section-head">
+                    <h2>Popular Healthy Snacks</h2>
+                    <p className="muted">
+                      Roasted fresh, packed with care, and ready for quick
+                      checkout.
+                    </p>
                   </div>
+
+                  {loading ? (
+                    <div className="loading">Loading the crunch...</div>
+                  ) : (
+                    <div className="grid">
+                      {(home?.featuredProducts?.length
+                        ? home.featuredProducts
+                        : products
+                      ).map((p) => (
+                        <ProductCard key={p.slug} product={p} onAdd={addToCart} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {orderId ? (
+                  <section className="section success">
+                    <h3>Order placed</h3>
+                    <p className="muted">Order ID: {orderId}</p>
+                    {orderDetails ? (
+                      <>
+                        <p className="muted">
+                          Status: {orderDetails.status} | Total:{" "}
+                          {formatZar(orderDetails.totalCents)}
+                        </p>
+                        {orderDetails.items?.length ? (
+                          <div className="order-items">
+                            {orderDetails.items.map((item) => (
+                              <div
+                                key={item.productSlug}
+                                className="order-item-row"
+                              >
+                                <span>
+                                  {item.quantity} x {item.productName}
+                                </span>
+                                <strong>
+                                  {formatZar(
+                                    item.unitPriceCents * item.quantity
+                                  )}
+                                </strong>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </section>
                 ) : null}
               </>
-            ) : null}
-          </section>
-        ) : null}
+            }
+          />
+
+          <Route
+            path="/delivery"
+            element={
+              <section className="section route-page">
+                <div className="section-head">
+                  <h2>{pageContent.deliveryTitle}</h2>
+                </div>
+                <div className="info-card">
+                  {pageContent.deliveryContent.split("\n").map((line, index) => (
+                    <p key={`${line}-${index}`} className="muted">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            }
+          />
+
+          <Route
+            path="/contact"
+            element={
+              <section className="section route-page">
+                <div className="section-head">
+                  <h2>{pageContent.contactTitle}</h2>
+                </div>
+                <div className="info-card">
+                  {pageContent.contactContent.split("\n").map((line, index) => (
+                    <p key={`${line}-${index}`} className="muted">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            }
+          />
+
+          <Route
+            path="/about"
+            element={
+              <section className="section route-page">
+                <div className="section-head">
+                  <h2>{pageContent.aboutTitle}</h2>
+                </div>
+                <div className="info-card">
+                  {pageContent.aboutContent.split("\n").map((line, index) => (
+                    <p key={`${line}-${index}`} className="muted">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+
+                <div className="section-head testimonials-head">
+                  <h3>Testimonials</h3>
+                </div>
+                <div className="testimonials-grid">
+                  {pageContent.testimonials.map((t, index) => (
+                    <article
+                      key={`${t.name}-${index}`}
+                      className="testimonial-card"
+                    >
+                      <div className="testimonial-head">
+                        {t.imageUrl ? (
+                          <img
+                            src={t.imageUrl}
+                            alt={t.name || "Customer"}
+                            className="testimonial-avatar"
+                          />
+                        ) : (
+                          <span className="testimonial-avatar placeholder">
+                            {(t.name || "C").slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <p className="testimonial-name">{t.name}</p>
+                      </div>
+                      <p className="testimonial-quote">"{t.feedback}"</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            }
+          />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       {cartOpen ? (

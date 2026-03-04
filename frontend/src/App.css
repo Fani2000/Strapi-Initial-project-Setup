@@ -187,6 +187,91 @@ main {
   margin-top: 50px;
 }
 
+.info-section .section-head h2 {
+  font-size: 24px;
+}
+
+.info-card {
+  margin-top: 14px;
+  border: 1px solid var(--topbar-border);
+  border-radius: 16px;
+  background: var(--card-soft);
+  padding: 18px;
+}
+
+.info-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.info-card p + p {
+  margin-top: 10px;
+}
+
+.route-page {
+  max-width: 980px;
+}
+
+.testimonials-head {
+  margin-top: 28px;
+}
+
+.testimonials-head h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.testimonials-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.testimonial-card {
+  border: 1px solid var(--topbar-border);
+  border-radius: 14px;
+  background: var(--card);
+  padding: 14px;
+}
+
+.testimonial-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.testimonial-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--topbar-border);
+}
+
+.testimonial-avatar.placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--card-soft);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.testimonial-quote {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.testimonial-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.testimonial-role {
+  margin: 0;
+}
+
 .order-items {
   margin-top: 14px;
   display: flex;

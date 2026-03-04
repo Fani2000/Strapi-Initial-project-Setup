@@ -76,6 +76,14 @@ app.MapGet("/api/shop/theme", async (
     return Results.Ok(new { theme });
 });
 
+app.MapGet("/api/shop/pages", async (
+    ProductsService products,
+    CancellationToken ct) =>
+{
+    var pages = await products.GetPagesAsync(ct);
+    return Results.Ok(new { pages });
+});
+
 app.MapPost("/api/shop/checkout", async (
     CheckoutRequest req,
     ProductsService products,
@@ -153,7 +161,26 @@ app.MapPost("/api/webhooks/strapi", async (
 {
     products.InvalidateCache();
     await products.SeedFromStrapiAsync(ct);
-    return Results.Ok(new { ok = true });
+
+    var syncedProducts = await products.GetProductsAsync(ct);
+    var syncedPages = await products.GetPagesAsync(ct);
+    if (syncedProducts.Count == 0)
+    {
+        return Results.StatusCode(StatusCodes.Status502BadGateway);
+    }
+
+    return Results.Ok(new
+    {
+        ok = true,
+        products = syncedProducts.Count,
+        pageSections = new
+        {
+            syncedPages.DeliveryTitle,
+            syncedPages.AboutTitle,
+            syncedPages.ContactTitle,
+            Testimonials = syncedPages.Testimonials.Length
+        }
+    });
 });
 
 app.Run();

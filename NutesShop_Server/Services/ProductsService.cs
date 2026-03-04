@@ -81,6 +81,27 @@ public sealed class ProductsService(
         return fresh;
     }
 
+    public async Task<SitePagesDto> GetPagesAsync(CancellationToken ct)
+    {
+        if (cache.TryGetValue("pages", out SitePagesDto? cached) && cached is not null)
+            return cached;
+
+        var fromDb = await store.GetPagesAsync(ct);
+        if (fromDb is not null)
+        {
+            cache.Set("pages", fromDb, MemoryTtl);
+            return fromDb;
+        }
+
+        var fresh = await strapiService.FetchPagesFromStrapiAsync(ct);
+        if (HasData(fresh))
+        {
+            await store.UpsertPagesAsync(fresh, ct);
+        }
+        cache.Set("pages", fresh, MemoryTtl);
+        return fresh;
+    }
+
     public async Task EnsureInitialDataAsync(CancellationToken ct)
     {
         var existingProducts = await store.GetProductsAsync(ct);
@@ -112,6 +133,16 @@ public sealed class ProductsService(
                 await store.UpsertThemeAsync(theme, ct);
             }
         }
+
+        var existingPages = await store.GetPagesAsync(ct);
+        if (existingPages is null)
+        {
+            var pages = await FetchWithRetriesAsync(strapiService.FetchPagesFromStrapiAsync, ct);
+            if (HasData(pages))
+            {
+                await store.UpsertPagesAsync(pages, ct);
+            }
+        }
     }
 
     public async Task SeedFromStrapiAsync(CancellationToken ct)
@@ -133,6 +164,12 @@ public sealed class ProductsService(
         {
             await store.UpsertThemeAsync(theme, ct);
         }
+
+        var pages = await FetchWithRetriesAsync(strapiService.FetchPagesFromStrapiAsync, ct);
+        if (HasData(pages))
+        {
+            await store.UpsertPagesAsync(pages, ct);
+        }
     }
 
     public void InvalidateCache()
@@ -140,6 +177,7 @@ public sealed class ProductsService(
         cache.Remove("products");
         cache.Remove("home");
         cache.Remove("theme");
+        cache.Remove("pages");
     }
 
     private static async Task<T> FetchWithRetriesAsync<T>(
@@ -171,6 +209,15 @@ public sealed class ProductsService(
                    || !string.IsNullOrWhiteSpace(home.HeroSubtitle)
                    || !string.IsNullOrWhiteSpace(home.PromoText)
                    || (home.FeaturedProducts?.Length ?? 0) > 0;
+
+        if (result is SitePagesDto pages)
+            return !string.IsNullOrWhiteSpace(pages.DeliveryTitle)
+                   || !string.IsNullOrWhiteSpace(pages.DeliveryContent)
+                   || !string.IsNullOrWhiteSpace(pages.AboutTitle)
+                   || !string.IsNullOrWhiteSpace(pages.AboutContent)
+                   || !string.IsNullOrWhiteSpace(pages.ContactTitle)
+                   || !string.IsNullOrWhiteSpace(pages.ContactContent)
+                   || (pages.Testimonials?.Length ?? 0) > 0;
 
         if (result is ThemeDto theme)
             return !string.IsNullOrWhiteSpace(theme.Name);

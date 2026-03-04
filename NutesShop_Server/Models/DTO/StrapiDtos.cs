@@ -40,7 +40,18 @@ public sealed record HomePageAttributes(
     string? HeroSubtitle,
     string? PromoText,
     StrapiMediaSingle? HeroImage,
-    StrapiRelationCollection<ProductAttributes>? FeaturedProducts
+    StrapiRelationCollection<ProductAttributes>? FeaturedProducts,
+    StrapiRelationCollection<ProductAttributes>? Products
+);
+
+public sealed record SitePageAttributes(
+    string? DeliveryTitle,
+    string? DeliveryContent,
+    string? AboutTitle,
+    string? AboutContent,
+    string? ContactTitle,
+    string? ContactContent,
+    JsonElement? Testimonials
 );
 
 public sealed record ThemeAttributes(

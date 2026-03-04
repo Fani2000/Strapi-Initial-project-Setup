@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_common_testimonials",
+  "info": {
+    "displayName": "Testimonial"
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "feedback": {
+      "type": "text"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  }
+}

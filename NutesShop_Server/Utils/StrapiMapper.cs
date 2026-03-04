@@ -136,6 +136,15 @@ public static class StrapiMapper
                 .Build();
             featured = MapProducts(payload, strapiBaseUrl).ToArray();
         }
+        else if (a.TryGetProperty("products", out var products) &&
+                 products.TryGetProperty("data", out var productsData) &&
+                 productsData.ValueKind == JsonValueKind.Array)
+        {
+            var payload = new JsonObjectBuilder()
+                .WithData(productsData)
+                .Build();
+            featured = MapProducts(payload, strapiBaseUrl).ToArray();
+        }
 
         return new HomePageDto(
             HeroTitle: heroTitle,
@@ -171,7 +180,8 @@ public static class StrapiMapper
             return new HomePageDto("", "", "", "", Array.Empty<ProductDto>());
 
         var heroImageUrl = ResolveUrl(a.HeroImage?.Data?.Attributes?.Url, strapiBaseUrl);
-        var featured = a.FeaturedProducts?.Data?
+        var featuredSource = a.FeaturedProducts?.Data ?? a.Products?.Data;
+        var featured = featuredSource?
             .Select(p => MapProductEntry(p, strapiBaseUrl))
             .Where(p => p is not null)
             .Select(p => p!)
@@ -183,6 +193,29 @@ public static class StrapiMapper
             PromoText: a.PromoText ?? "",
             HeroImageUrl: heroImageUrl ?? "",
             FeaturedProducts: featured
+        );
+    }
+
+    public static SitePagesDto MapPages(
+        StrapiResponse<StrapiEntry<SitePageAttributes>> resp,
+        string strapiBaseUrl)
+    {
+        var ext = resp?.Data?.ExtensionData;
+        if (ext is not null && ext.Count > 0)
+            return MapPagesFromFlat(ext, strapiBaseUrl);
+
+        var a = resp?.Data?.Attributes;
+        if (a is null)
+            return new SitePagesDto("", "", "", "", "", "", Array.Empty<TestimonialDto>());
+
+        return new SitePagesDto(
+            DeliveryTitle: a.DeliveryTitle ?? "",
+            DeliveryContent: a.DeliveryContent ?? "",
+            AboutTitle: a.AboutTitle ?? "",
+            AboutContent: a.AboutContent ?? "",
+            ContactTitle: a.ContactTitle ?? "",
+            ContactContent: a.ContactContent ?? "",
+            Testimonials: ParseTestimonials(a.Testimonials, strapiBaseUrl)
         );
     }
 
@@ -266,6 +299,16 @@ public static class StrapiMapper
                     featured = MapProducts(parsed, strapiBaseUrl).ToArray();
             }
         }
+        else if (data.TryGetValue("products", out var products) && products.ValueKind == JsonValueKind.Object)
+        {
+            if (products.TryGetProperty("data", out var productsData) && productsData.ValueKind == JsonValueKind.Array)
+            {
+                var payload = new JsonObjectBuilder().WithData(productsData).Build();
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<StrapiResponse<List<StrapiEntry<ProductAttributes>>>>(payload);
+                if (parsed is not null)
+                    featured = MapProducts(parsed, strapiBaseUrl).ToArray();
+            }
+        }
 
         return new HomePageDto(
             HeroTitle: heroTitle,
@@ -273,6 +316,25 @@ public static class StrapiMapper
             PromoText: promoText,
             HeroImageUrl: heroImageUrl,
             FeaturedProducts: featured
+        );
+    }
+
+    private static SitePagesDto MapPagesFromFlat(
+        Dictionary<string, System.Text.Json.JsonElement> data,
+        string strapiBaseUrl)
+    {
+        JsonElement? testimonials = null;
+        if (data.TryGetValue("testimonials", out var testimonialsEl))
+            testimonials = testimonialsEl;
+
+        return new SitePagesDto(
+            DeliveryTitle: GetString(data, "deliveryTitle") ?? "",
+            DeliveryContent: GetString(data, "deliveryContent") ?? "",
+            AboutTitle: GetString(data, "aboutTitle") ?? "",
+            AboutContent: GetString(data, "aboutContent") ?? "",
+            ContactTitle: GetString(data, "contactTitle") ?? "",
+            ContactContent: GetString(data, "contactContent") ?? "",
+            Testimonials: ParseTestimonials(testimonials, strapiBaseUrl)
         );
     }
 
@@ -416,6 +478,90 @@ public static class StrapiMapper
             Featured = featured,
             Badges = badges
         };
+    }
+
+    private static TestimonialDto[] ParseTestimonials(
+        JsonElement? testimonials,
+        string strapiBaseUrl)
+    {
+        if (testimonials is null) return Array.Empty<TestimonialDto>();
+        var value = testimonials.Value;
+        if (value.ValueKind != JsonValueKind.Array) return Array.Empty<TestimonialDto>();
+
+        var list = new List<TestimonialDto>();
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object) continue;
+            var name = item.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String
+                ? n.GetString() ?? ""
+                : "";
+            var feedback = item.TryGetProperty("feedback", out var f) && f.ValueKind == JsonValueKind.String
+                ? f.GetString() ?? ""
+                : "";
+            if (string.IsNullOrWhiteSpace(feedback) &&
+                item.TryGetProperty("comment", out var c) &&
+                c.ValueKind == JsonValueKind.String)
+            {
+                feedback = c.GetString() ?? "";
+            }
+            if (string.IsNullOrWhiteSpace(feedback) &&
+                item.TryGetProperty("quote", out var q) &&
+                q.ValueKind == JsonValueKind.String)
+            {
+                feedback = q.GetString() ?? "";
+            }
+
+            var imageUrl = ResolveMediaUrl(item, strapiBaseUrl);
+
+            if (string.IsNullOrWhiteSpace(name) &&
+                item.TryGetProperty("userName", out var userName) &&
+                userName.ValueKind == JsonValueKind.String)
+            {
+                name = userName.GetString() ?? "";
+            }
+            if (string.IsNullOrWhiteSpace(name) &&
+                item.TryGetProperty("author", out var author) &&
+                author.ValueKind == JsonValueKind.String)
+            {
+                name = author.GetString() ?? "";
+            }
+
+            if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(feedback))
+                continue;
+
+            list.Add(new TestimonialDto(name, feedback, imageUrl));
+        }
+
+        return list.ToArray();
+    }
+
+    private static string ResolveMediaUrl(JsonElement item, string strapiBaseUrl)
+    {
+        if (!item.TryGetProperty("image", out var imageEl) || imageEl.ValueKind != JsonValueKind.Object)
+            return "";
+
+        // Strapi v5 flat media in component: image.url
+        if (imageEl.TryGetProperty("url", out var urlEl) && urlEl.ValueKind == JsonValueKind.String)
+            return ResolveUrl(urlEl.GetString(), strapiBaseUrl) ?? "";
+
+        // Strapi nested style: image.data.attributes.url
+        if (imageEl.TryGetProperty("data", out var dataEl) && dataEl.ValueKind == JsonValueKind.Object)
+        {
+            if (dataEl.TryGetProperty("attributes", out var attrs) &&
+                attrs.ValueKind == JsonValueKind.Object &&
+                attrs.TryGetProperty("url", out var attrUrl) &&
+                attrUrl.ValueKind == JsonValueKind.String)
+            {
+                return ResolveUrl(attrUrl.GetString(), strapiBaseUrl) ?? "";
+            }
+
+            if (dataEl.TryGetProperty("url", out var dataUrl) && dataUrl.ValueKind == JsonValueKind.String)
+            {
+                return ResolveUrl(dataUrl.GetString(), strapiBaseUrl) ?? "";
+            }
+        }
+
+        return "";
     }
 
     private static string? GetString(Dictionary<string, System.Text.Json.JsonElement> data, string key)

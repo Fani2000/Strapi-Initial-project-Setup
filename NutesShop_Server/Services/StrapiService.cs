@@ -42,6 +42,25 @@ public class StrapiService(IHttpClientFactory _httpFactory, IConfiguration _cfg)
         }
     }
 
+    public async Task<SitePagesDto> FetchPagesFromStrapiAsync(CancellationToken ct)
+    {
+        var http = _httpFactory.CreateClient("strapi");
+        try
+        {
+            var resp = await http.GetAsync("/api/site-page?populate[testimonials][populate]=image", ct);
+            resp.EnsureSuccessStatusCode();
+
+            var dto = await resp.Content.ReadFromJsonAsync<StrapiResponse<StrapiEntry<SitePageAttributes>>>(cancellationToken: ct);
+            if (dto is null) return new SitePagesDto("", "", "", "", "", "", Array.Empty<TestimonialDto>());
+            var baseUrl = _cfg["STRAPI_BASE_URL"] ?? "";
+            return StrapiMapper.MapPages(dto, baseUrl);
+        }
+        catch
+        {
+            return new SitePagesDto("", "", "", "", "", "", Array.Empty<TestimonialDto>());
+        }
+    }
+
     public async Task<ThemeDto> FetchThemeFromStrapiAsync(CancellationToken ct)
     {
         var http = _httpFactory.CreateClient("strapi");
