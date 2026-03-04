@@ -8,24 +8,24 @@ public static class StrapiMapper
     public static ThemeDto DefaultTheme()
     {
         return new ThemeDto(
-            Name: "Sunny Nut Market",
-            Background: "#fffdf8",
-            BackgroundAccent: "#f6ecd8",
+            Name: "Fresh Fuel Market",
+            Background: "#f4fff7",
+            BackgroundAccent: "#cbf2d8",
             Card: "#ffffff",
-            CardSoft: "rgba(248, 241, 226, 0.8)",
-            Text: "#2f2a1f",
-            Muted: "rgba(47, 42, 31, 0.68)",
-            Accent: "#8a6a2f",
-            Accent2: "#6ea06b",
-            TopbarBg: "rgba(255, 253, 248, 0.92)",
-            TopbarBorder: "rgba(138, 106, 47, 0.22)",
-            HeroGradient1: "#fff7e8",
-            HeroGradient2: "#f4e3c1",
-            HeroGradient3: "#dcefd2",
-            HeroOverlay1: "rgba(255, 255, 255, 0.20)",
-            HeroOverlay2: "rgba(255, 255, 255, 0.02)",
-            Glow: "rgba(110, 160, 107, 0.28)",
-            Shadow: "0 18px 38px rgba(81, 66, 36, 0.14)"
+            CardSoft: "rgba(231, 252, 238, 0.82)",
+            Text: "#0f2f1f",
+            Muted: "rgba(15, 47, 31, 0.64)",
+            Accent: "#ff8a26",
+            Accent2: "#0f7a41",
+            TopbarBg: "rgba(244, 255, 247, 0.93)",
+            TopbarBorder: "rgba(15, 122, 65, 0.24)",
+            HeroGradient1: "#f6fff9",
+            HeroGradient2: "#d7fbe6",
+            HeroGradient3: "#b5f2ce",
+            HeroOverlay1: "rgba(255, 255, 255, 0.22)",
+            HeroOverlay2: "rgba(255, 255, 255, 0.03)",
+            Glow: "rgba(33, 194, 110, 0.3)",
+            Shadow: "0 20px 42px rgba(8, 72, 40, 0.16)"
         );
     }
 
