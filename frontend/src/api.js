@@ -9,8 +9,23 @@ async function request(path, options) {
   return res.json();
 }
 
-export async function getProducts() {
-  return request("/api/shop/products");
+export async function getProducts({ page = 1, pageSize = 12, q = "" } = {}) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  if (q) params.set("q", q);
+  return request(`/api/shop/products?${params.toString()}`);
+}
+
+export async function searchProducts(q, limit = 8, options = {}) {
+  const params = new URLSearchParams();
+  params.set("q", q);
+  params.set("limit", String(limit));
+  return request(`/api/shop/products/search?${params.toString()}`, options);
+}
+
+export async function getProduct(slug) {
+  return request(`/api/shop/products/${slug}`);
 }
 
 export async function getHome() {

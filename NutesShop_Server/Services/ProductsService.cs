@@ -39,6 +39,42 @@ public sealed class ProductsService(
         return products.FirstOrDefault(p => string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
     }
 
+    public async Task<(IReadOnlyList<ProductDto> Items, int Total)> GetProductsPageAsync(
+        string? query,
+        int page,
+        int pageSize,
+        CancellationToken ct)
+    {
+        var all = await GetProductsAsync(ct);
+        var filtered = ApplyProductFilter(all, query);
+        var total = filtered.Count;
+
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var items = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<ProductDto>> SearchProductsAsync(
+        string query,
+        int limit,
+        CancellationToken ct)
+    {
+        query = (query ?? "").Trim();
+        if (query.Length < 2)
+            return Array.Empty<ProductDto>();
+
+        var all = await GetProductsAsync(ct);
+        limit = Math.Clamp(limit, 1, 20);
+        return ApplyProductSearch(all, query)
+            .Take(limit)
+            .ToArray();
+    }
+
     public async Task<HomePageDto> GetHomeAsync(CancellationToken ct)
     {
         if (cache.TryGetValue("home", out HomePageDto? cached) && cached is not null)
@@ -223,6 +259,57 @@ public sealed class ProductsService(
             return !string.IsNullOrWhiteSpace(theme.Name);
 
         return result is not null;
+    }
+
+    private static IReadOnlyList<ProductDto> ApplyProductFilter(
+        IReadOnlyList<ProductDto> products,
+        string? query)
+    {
+        var ordered = products
+            .OrderByDescending(p => p.Featured)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(query))
+            return ordered.ToArray();
+
+        var q = query.Trim();
+        return ordered
+            .Where(p =>
+                p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Description.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Slug.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+
+    private static IReadOnlyList<ProductDto> ApplyProductSearch(
+        IReadOnlyList<ProductDto> products,
+        string query)
+    {
+        var q = query.Trim();
+        return products
+            .Select(p => new { Product = p, Score = GetSearchScore(p, q) })
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.Product.Featured)
+            .ThenBy(x => x.Product.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Product)
+            .ToArray();
+    }
+
+    private static int GetSearchScore(ProductDto product, string query)
+    {
+        var score = 0;
+        if (product.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase)) score += 120;
+        else if (product.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) score += 70;
+
+        if (product.Slug.StartsWith(query, StringComparison.OrdinalIgnoreCase)) score += 45;
+        else if (product.Slug.Contains(query, StringComparison.OrdinalIgnoreCase)) score += 25;
+
+        if (product.Description.Contains(query, StringComparison.OrdinalIgnoreCase)) score += 12;
+        if (product.Featured) score += 6;
+        if (product.InStock) score += 4;
+
+        return score;
     }
     
 }

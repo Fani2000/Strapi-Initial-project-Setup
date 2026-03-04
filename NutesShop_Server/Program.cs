@@ -42,11 +42,40 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapGet("/api/shop/products", async (
+    int? page,
+    int? pageSize,
+    string? q,
     ProductsService products,
     CancellationToken ct) =>
 {
-    var items = await products.GetProductsAsync(ct);
-    return Results.Ok(new { currency = "ZAR", products = items });
+    var safePage = page.GetValueOrDefault(1);
+    var safePageSize = pageSize.GetValueOrDefault(12);
+    var result = await products.GetProductsPageAsync(q, safePage, safePageSize, ct);
+    var totalPages = result.Total == 0
+        ? 0
+        : (int)Math.Ceiling(result.Total / (double)Math.Clamp(safePageSize, 1, 100));
+    return Results.Ok(new
+    {
+        currency = "ZAR",
+        page = Math.Max(1, safePage),
+        pageSize = Math.Clamp(safePageSize, 1, 100),
+        total = result.Total,
+        totalPages,
+        products = result.Items
+    });
+});
+
+app.MapGet("/api/shop/products/search", async (
+    string? q,
+    int? limit,
+    ProductsService products,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
+        return Results.Ok(new { products = Array.Empty<ProductDto>() });
+
+    var items = await products.SearchProductsAsync(q, limit.GetValueOrDefault(8), ct);
+    return Results.Ok(new { products = items });
 });
 
 app.MapGet("/api/shop/products/{slug}", async (

@@ -1,14 +1,24 @@
 import "./App.css";
-import { useEffect, useMemo, useState } from "react";
-import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Link,
+  Navigate,
+  NavLink,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import {
   formatZar,
   getHome,
   getOrder,
   getPages,
   getPickupLocations,
+  getProduct,
   getProducts,
   getTheme,
+  searchProducts,
 } from "./api";
 import CartDrawer from "./components/CartDrawer";
 import CheckoutPanel from "./components/CheckoutPanel";
@@ -35,11 +45,95 @@ const defaultTestimonials = [
     imageUrl: "",
   },
 ];
+const SEARCH_DEBOUNCE_MS = 300;
+
+function ProductDetailsPage({ onAdd }) {
+  const { slug = "" } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setError("");
+
+    async function load() {
+      try {
+        const res = await getProduct(slug);
+        if (!alive) return;
+        setProduct(res.product || null);
+        if (!res.product) {
+          setError("Product not found.");
+        }
+      } catch {
+        if (alive) setError("Could not load product details.");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [slug]);
+
+  return (
+    <section className="section route-page">
+      <Link to="/" className="back-link">
+        Back to catalog
+      </Link>
+      {loading ? (
+        <div className="loading">Loading product...</div>
+      ) : error || !product ? (
+        <div className="error">{error || "Product not found."}</div>
+      ) : (
+        <article className="product-detail">
+          <div className="product-detail-media">
+            {product.imageUrl ? (
+              <img src={product.imageUrl} alt={product.name} className="product-detail-image" />
+            ) : (
+              <div className="card-image placeholder">No image</div>
+            )}
+          </div>
+          <div className="product-detail-body">
+            <p className="price-chip">
+              from {formatZar(product.priceCents)} / {product.per}
+            </p>
+            <h2>{product.name}</h2>
+            <p className="muted">{product.description}</p>
+            <div className="badge-row">
+              {(product.badges || []).map((b, i) => (
+                <span key={`${b}-${i}`} className="badge">
+                  {b}
+                </span>
+              ))}
+            </div>
+            <div className="product-detail-actions">
+              <span className={`stock ${product.inStock ? "in" : "out"}`}>
+                {product.inStock ? "In stock" : "Out of stock"}
+              </span>
+              <button
+                className="btn"
+                disabled={!product.inStock}
+                onClick={() => onAdd(product)}
+              >
+                Add to cart
+              </button>
+            </div>
+          </div>
+        </article>
+      )}
+    </section>
+  );
+}
 
 function App() {
   const [products, setProducts] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [home, setHome] = useState(null);
   const [pages, setPages] = useState(null);
   const [theme, setTheme] = useState(null);
@@ -49,32 +143,68 @@ function App() {
   const [orderDetails, setOrderDetails] = useState(null);
   const [cart, setCart] = useState([]);
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(12);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [catalogQueryInput, setCatalogQueryInput] = useState("");
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const catalogReadyRef = useRef(false);
+  const catalogRequestRef = useRef(0);
+
+  const [searchInput, setSearchInput] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchBoxRef = useRef(null);
+
+  const navigate = useNavigate();
+
+  const loadCatalog = useCallback(async (nextPage, query, keepLoading = true) => {
+    const requestId = ++catalogRequestRef.current;
+    if (keepLoading) setCatalogLoading(true);
+    try {
+      const p = await getProducts({ page: nextPage, pageSize, q: query });
+      if (requestId !== catalogRequestRef.current) return;
+      setProducts(p.products || []);
+      setPage(p.page || nextPage);
+      setTotalPages(p.totalPages || 0);
+      setTotalProducts(p.total || 0);
+    } finally {
+      if (keepLoading && requestId === catalogRequestRef.current) {
+        setCatalogLoading(false);
+      }
+    }
+  }, [pageSize]);
+
   useEffect(() => {
     let alive = true;
     async function load() {
       try {
-        const [p, h, pickups, t, pg] = await Promise.all([
-          getProducts(),
+        const [h, pickups, t, pg] = await Promise.all([
           getHome(),
           getPickupLocations(),
           getTheme(),
           getPages(),
         ]);
         if (!alive) return;
-        setProducts(p.products || []);
         setHome(h.home || null);
         setPickupLocations(pickups || []);
         setTheme(t.theme || null);
         setPages(pg.pages || null);
+        await loadCatalog(1, "", false);
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          catalogReadyRef.current = true;
+          setLoading(false);
+        }
       }
     }
     load();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [loadCatalog]);
 
   useEffect(() => {
     if (!theme) return;
@@ -107,9 +237,11 @@ function App() {
     let alive = true;
     const interval = setInterval(async () => {
       try {
-        const p = await getProducts();
+        const p = await getProducts({ page, pageSize, q: catalogQuery });
         if (!alive) return;
         setProducts(p.products || []);
+        setTotalPages(p.totalPages || 0);
+        setTotalProducts(p.total || 0);
       } catch {
         // ignore refresh errors
       }
@@ -118,7 +250,59 @@ function App() {
       alive = false;
       clearInterval(interval);
     };
+  }, [page, pageSize, catalogQuery]);
+
+  useEffect(() => {
+    if (!catalogReadyRef.current) return;
+    const q = catalogQueryInput.trim();
+    const timeoutId = setTimeout(() => {
+      if (q === catalogQuery) return;
+      setCatalogQuery(q);
+      loadCatalog(1, q);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [catalogQueryInput, catalogQuery, loadCatalog]);
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    const q = searchInput.trim();
+    if (q.length < 2) {
+      setSearchSuggestions([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    let alive = true;
+    const controller = new AbortController();
+    setSearchLoading(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await searchProducts(q, 8, { signal: controller.signal });
+        if (!alive) return;
+        setSearchSuggestions(res.products || []);
+      } catch {
+        if (alive) setSearchSuggestions([]);
+      } finally {
+        if (alive) setSearchLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      alive = false;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [searchInput]);
 
   const cartItems = useMemo(() => cart, [cart]);
 
@@ -140,7 +324,6 @@ function App() {
         },
       ];
     });
-    setCartOpen(true);
   }
 
   function updateQty(slug, qty) {
@@ -196,6 +379,24 @@ function App() {
       pages?.testimonials?.length > 0 ? pages.testimonials : defaultTestimonials,
   };
 
+  async function handleCatalogSearchSubmit(event) {
+    event.preventDefault();
+    const nextQuery = catalogQueryInput.trim();
+    setCatalogQuery(nextQuery);
+    await loadCatalog(1, nextQuery);
+  }
+
+  async function handleCatalogPageChange(nextPage) {
+    await loadCatalog(nextPage, catalogQuery);
+  }
+
+  function handleSuggestionClick(slug) {
+    setShowSearchDropdown(false);
+    setSearchInput("");
+    setSearchSuggestions([]);
+    navigate(`/products/${slug}`);
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -239,9 +440,38 @@ function App() {
           </NavLink>
         </nav>
         <div className="actions">
-          <button className="icon-btn" aria-label="Search">
-            Search
-          </button>
+          <div className="search-box" ref={searchBoxRef}>
+            <input
+              type="search"
+              className="search-input"
+              placeholder="Search products..."
+              value={searchInput}
+              onFocus={() => setShowSearchDropdown(true)}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            {showSearchDropdown ? (
+              <div className="search-dropdown">
+                {searchLoading ? (
+                  <div className="search-empty">Searching...</div>
+                ) : searchSuggestions.length > 0 ? (
+                  searchSuggestions.map((p) => (
+                    <button
+                      key={p.slug}
+                      className="search-item"
+                      onClick={() => handleSuggestionClick(p.slug)}
+                    >
+                      <span>{p.name}</span>
+                      <small>{formatZar(p.priceCents)}</small>
+                    </button>
+                  ))
+                ) : searchInput.trim().length >= 2 ? (
+                  <div className="search-empty">No products found</div>
+                ) : (
+                  <div className="search-empty">Type at least 2 letters</div>
+                )}
+              </div>
+            ) : null}
+          </div>
           <button className="btn ghost" onClick={() => setCartOpen(true)}>
             Cart ({cartItems.length})
           </button>
@@ -264,17 +494,59 @@ function App() {
                     </p>
                   </div>
 
-                  {loading ? (
+                  <form className="catalog-filter" onSubmit={handleCatalogSearchSubmit}>
+                    <input
+                      type="search"
+                      value={catalogQueryInput}
+                      onChange={(e) => setCatalogQueryInput(e.target.value)}
+                      placeholder="Filter catalog"
+                    />
+                    <button className="btn small" type="submit">
+                      Filter
+                    </button>
+                    <button
+                      className="btn small ghost"
+                      type="button"
+                      onClick={async () => {
+                        setCatalogQueryInput("");
+                        setCatalogQuery("");
+                        await loadCatalog(1, "");
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <span className="muted">{totalProducts} products</span>
+                  </form>
+
+                  {loading || catalogLoading ? (
                     <div className="loading">Loading the crunch...</div>
                   ) : (
-                    <div className="grid">
-                      {(home?.featuredProducts?.length
-                        ? home.featuredProducts
-                        : products
-                      ).map((p) => (
-                        <ProductCard key={p.slug} product={p} onAdd={addToCart} />
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid">
+                        {products.map((p) => (
+                          <ProductCard key={p.slug} product={p} onAdd={addToCart} />
+                        ))}
+                      </div>
+                      <div className="pagination">
+                        <button
+                          className="btn small ghost"
+                          disabled={page <= 1}
+                          onClick={() => handleCatalogPageChange(page - 1)}
+                        >
+                          Previous
+                        </button>
+                        <span className="muted">
+                          Page {totalPages === 0 ? 0 : page} of {totalPages}
+                        </span>
+                        <button
+                          className="btn small ghost"
+                          disabled={page >= totalPages}
+                          onClick={() => handleCatalogPageChange(page + 1)}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </>
                   )}
                 </section>
 
@@ -314,6 +586,8 @@ function App() {
               </>
             }
           />
+
+          <Route path="/products/:slug" element={<ProductDetailsPage onAdd={addToCart} />} />
 
           <Route
             path="/delivery"

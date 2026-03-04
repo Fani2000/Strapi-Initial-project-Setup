@@ -7,6 +7,8 @@ namespace NutsShop_Server.Shop;
 public sealed class PgStore
 {
     private readonly string _connString;
+    private static readonly TimeSpan InitialDbRetryDelay = TimeSpan.FromMilliseconds(500);
+    private const int MaxDbOpenAttempts = 12;
 
     public PgStore(IConfiguration cfg)
     {
@@ -18,9 +20,41 @@ public sealed class PgStore
 
     public async Task<NpgsqlConnection> OpenAsync(CancellationToken ct)
     {
-        var conn = CreateConnection();
-        await conn.OpenAsync(ct);
-        return conn;
+        var delay = InitialDbRetryDelay;
+
+        for (var attempt = 1; attempt <= MaxDbOpenAttempts; attempt++)
+        {
+            var conn = CreateConnection();
+            try
+            {
+                await conn.OpenAsync(ct);
+                return conn;
+            }
+            catch (Exception ex) when (IsTransientStartupError(ex) && attempt < MaxDbOpenAttempts)
+            {
+                await conn.DisposeAsync();
+                await Task.Delay(delay, ct);
+                delay = TimeSpan.FromMilliseconds(Math.Min(delay.TotalMilliseconds * 2, 5000));
+            }
+            catch
+            {
+                await conn.DisposeAsync();
+                throw;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to open Postgres connection after multiple attempts.");
+    }
+
+    private static bool IsTransientStartupError(Exception ex)
+    {
+        if (ex is PostgresException pg && pg.SqlState == "57P03")
+            return true; // "the database system is starting up"
+
+        if (ex is NpgsqlException npg && npg.IsTransient)
+            return true;
+
+        return false;
     }
 
     public async Task UpsertProductsAsync(IEnumerable<ProductDto> products, CancellationToken ct)

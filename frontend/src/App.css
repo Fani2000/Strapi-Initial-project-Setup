@@ -91,6 +91,7 @@ body {
 .actions {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .icon-btn {
@@ -100,6 +101,56 @@ body {
   padding: 10px 12px;
   color: var(--text);
   cursor: pointer;
+}
+
+.search-box {
+  position: relative;
+  width: min(280px, 40vw);
+}
+
+.search-input {
+  width: 100%;
+  border: 1px solid var(--topbar-border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--topbar-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 60;
+}
+
+.search-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-item:hover {
+  background: var(--card-soft);
+}
+
+.search-empty {
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 main {
@@ -187,6 +238,23 @@ main {
   margin-top: 50px;
 }
 
+.catalog-filter {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.catalog-filter input {
+  min-width: 220px;
+  border: 1px solid var(--topbar-border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  padding: 9px 10px;
+}
+
 .info-section .section-head h2 {
   font-size: 24px;
 }
@@ -210,6 +278,48 @@ main {
 
 .route-page {
   max-width: 980px;
+}
+
+.back-link {
+  color: var(--accent-2);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.product-detail {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 18px;
+  border: 1px solid var(--topbar-border);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 16px;
+}
+
+.product-detail-media {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card-soft);
+  min-height: 260px;
+}
+
+.product-detail-image {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  object-fit: cover;
+}
+
+.product-detail-body h2 {
+  margin: 6px 0 10px;
+}
+
+.product-detail-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .testimonials-head {
@@ -270,6 +380,14 @@ main {
 
 .testimonial-role {
   margin: 0;
+}
+
+.pagination {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .order-items {
@@ -333,6 +451,11 @@ main {
   flex-direction: column;
   min-height: 330px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .card:hover {
@@ -646,5 +769,13 @@ main {
 
   .hero-sub {
     font-size: 15px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .product-detail {
+    grid-template-columns: 1fr;
   }
 }
